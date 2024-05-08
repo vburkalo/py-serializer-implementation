@@ -5,7 +5,6 @@ from rest_framework import serializers
 from car.models import Car
 from rest_framework.renderers import JSONRenderer
 from rest_framework.parsers import JSONParser
-from io import BytesIO
 
 
 class CarSerializer(serializers.Serializer):
