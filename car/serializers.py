@@ -6,6 +6,7 @@ from io import BytesIO
 
 
 class CarSerializer(serializers.Serializer):
+    id = serializers.IntegerField(read_only=True)
     manufacturer = serializers.CharField(max_length=64)
     model = serializers.CharField(max_length=64)
     horse_powers = serializers.IntegerField(min_value=20, max_value=100)
@@ -17,7 +18,7 @@ class CarSerializer(serializers.Serializer):
     def create(self, validated_data):
         return Car.objects.create(**validated_data)
 
-    def update(self, instance, validated_data):
+    def update(self, instance: Car, validated_data):
         instance.manufacturer = validated_data.get(
             "manufacturer", instance.manufacturer
         )
@@ -47,4 +48,5 @@ def deserialize_car_object(car_json):
     if serializer.is_valid():
         return serializer.save()
     else:
-        raise Exception("Invalid data: " + str(serializer.errors))
+        print("Deserialization failed with errors:", serializer.errors)
+        return serializer.errors
