@@ -1,3 +1,6 @@
+import io
+
+from django.core.validators import MinValueValidator, MaxValueValidator
 from rest_framework import serializers
 from car.models import Car
 from rest_framework.renderers import JSONRenderer
@@ -7,13 +10,16 @@ from io import BytesIO
 
 class CarSerializer(serializers.Serializer):
     id = serializers.IntegerField(read_only=True)
-    manufacturer = serializers.CharField(max_length=64)
-    model = serializers.CharField(max_length=64)
-    horse_powers = serializers.IntegerField(min_value=20, max_value=100)
-    is_broken = serializers.BooleanField()
-    problem_description = serializers.CharField(
-        allow_null=True, required=False
-    )
+    manufacturer = serializers.CharField(max_length=64, required=True)
+    model = serializers.CharField(max_length=64, required=True)
+    horse_powers = serializers.IntegerField(
+        required=True,
+        validators=[MinValueValidator(1),
+                    MaxValueValidator(1914)])
+    is_broken = serializers.BooleanField(required=True)
+    problem_description = serializers.CharField(allow_null=True,
+                                                allow_blank=True,
+                                                required=False)
 
     def create(self, validated_data):
         return Car.objects.create(**validated_data)
@@ -36,17 +42,15 @@ class CarSerializer(serializers.Serializer):
         return instance
 
 
-def serialize_car_object(car):
+def serialize_car_object(car: Car) -> bytes:
     serializer = CarSerializer(car)
-    return JSONRenderer().render(serializer.data)
+    json = JSONRenderer().render(serializer.data)
+    return json
 
 
-def deserialize_car_object(car_json):
-    stream = BytesIO(car_json)
+def deserialize_car_object(json: bytes) -> Car:
+    stream = io.BytesIO(json)
     data = JSONParser().parse(stream)
     serializer = CarSerializer(data=data)
     if serializer.is_valid():
         return serializer.save()
-    else:
-        print("Deserialization failed with errors:", serializer.errors)
-        return serializer.errors
